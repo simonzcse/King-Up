@@ -1,13 +1,17 @@
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Model the player
+ * Name: Cheung King Hung ID: 21237379 Session: 000002
  */
 public class Player {
     /**
      * The length of the list
      */
-    private static final int LIST_LENGTH = 6;
+    private static final int LIST_LENGTH = 6;//Dont edit
     /**
      * A secret list of a player. This list would not be changed during the game
      */
@@ -29,6 +33,11 @@ public class Player {
      */
     public int getScore() {
        //TODO
+        int score = 0;
+        for (Character c:myList) {
+            score += c.getPosition()!= -1 ? Gameboard.SCORES[c.getPosition()]:0;
+        }
+        return score;
     }
 
     /**
@@ -37,6 +46,7 @@ public class Player {
      */
     public String getName() { 
         //TODO
+        return name;
      }
 
     /**
@@ -45,6 +55,7 @@ public class Player {
      */
     public void initVetoCard(int card) {
         //TODO
+        this.vetoCard = card;
     }
 
     /**
@@ -55,6 +66,25 @@ public class Player {
      */
     public Player(String name, Character[] list) {
         //TODO
+        this.name = name;
+        List<Character> characters = new ArrayList<Character>();
+
+        for (int i = 0; i < LIST_LENGTH; i++) {
+            boolean isOK = false;
+            randomChara:
+            while (!isOK) {
+                int randomCharaNumber = ThreadLocalRandom.current().nextInt(0, list.length);
+                Character randomCharacter = list[randomCharaNumber];
+                for (Character cc : characters) {
+                    if (cc.getName().equals(randomCharacter.getName())) {
+                        continue randomChara;
+                    }
+                }
+                characters.add(i, randomCharacter);
+                isOK = true;
+            }
+        }
+        this.myList = characters.toArray(new Character[LIST_LENGTH]);
     }
 
     /**
@@ -66,6 +96,13 @@ public class Player {
      */
     public boolean vote(boolean support) {
         //TODO
+        if (vetoCard <= 0){
+            return true;
+        }else if (!support){
+            --vetoCard;
+            return false;
+        }else {
+            return true;}
     }
 
     /**
@@ -75,6 +112,16 @@ public class Player {
      */
     public boolean voteRandomly() {
         //TODO
+        if (vetoCard <= 0){
+            return true;
+        }else {
+             if (!ThreadLocalRandom.current().nextBoolean()){
+                 --vetoCard;
+                 return false;
+             }else {
+                 return true;
+             }
+        }
     }
 
     /**
@@ -86,6 +133,26 @@ public class Player {
      */
     public Character placeRandomly(Character[] list) {
         //TODO
+        int[] countFloor = countFloor(list);
+        Character randomCharacter = null;
+        boolean isOK = false;
+        while (!isOK) {
+            int randomCharaNumber = ThreadLocalRandom.current().nextInt(0, list.length);
+            randomCharacter = list[randomCharaNumber];
+            if (randomCharacter.getPosition() == Character.OUT_OF_GAME){
+                boolean randomPositionIsOK = false;
+                while (!randomPositionIsOK) {
+                    int randomPosition = ThreadLocalRandom.current().nextInt(1, Gameboard.THRONE-1);
+                    if (countFloor[randomPosition]!=Gameboard.FULL) {
+                        randomCharacter.setPosition(randomPosition);
+                        isOK = true;
+                        randomPositionIsOK = true;
+                    }
+                }
+            }
+        }
+        return randomCharacter;
+
     }
 
     /**
@@ -98,6 +165,12 @@ public class Player {
      */
     public boolean voteSmartly(Character character) {
         //TODO
+        for (Character c:myList) {
+            if (character.getName().equals(c.getName())){
+                return vote(false);
+            }
+        }
+        return voteRandomly();
     }
 
     /**
@@ -111,6 +184,14 @@ public class Player {
      */
     public Character pickCharToMoveRandomly(Character[] list) {
         // TODO
+        while (true){
+            Character randomCharacter = list[ThreadLocalRandom.current().nextInt(0, Gameboard.NO_OF_CHARACTER)];
+            int[] countFloor = countFloor(list);
+            if (randomCharacter.getPosition()==Character.OUT_OF_GAME || countFloor[randomCharacter.getPosition()+1]==Gameboard.FULL){
+                continue;
+            }
+            return randomCharacter;
+        }
     }
 
     /**
@@ -131,6 +212,21 @@ public class Player {
      */
     public Character pickCharToMove(Character[] list, String name) {
         //TODO
+        Character character = null;
+        int[] countFloor = countFloor(list);
+        for (Character c: list) {
+            if (c.getName().equals(name)){
+                character = c;
+            }
+        }
+        try {
+            if (character.getPosition()==Character.OUT_OF_GAME || countFloor[character.getPosition()+1]==Gameboard.FULL){
+                return null;
+            }
+        }catch (Exception e){
+            return null;
+        }
+        return character;
     }
 
     /**
@@ -145,6 +241,19 @@ public class Player {
      */
     public Character pickCharToMoveSmartly(Character[] list) {
         //TODO
+        int i = Integer.MAX_VALUE;
+        int[] countFloor = countFloor(list);
+        Character character = null;
+            for (Character c:myList) {
+                if (c.getPosition()<i && c.getPosition()!=Character.OUT_OF_GAME && countFloor[c.getPosition()+1]!=Gameboard.FULL){
+                    i = c.getPosition();
+                    character = c;
+                }
+            }
+            if (character!= null && i<=Gameboard.THRONE-1){
+                return character;
+            }else {return pickCharToMoveRandomly(list);
+                }
     }
 
     /**
@@ -154,5 +263,26 @@ public class Player {
      */
     public String toString() {
         //TODO
+        String str = String.format("%s\t Veto Card :%d\n", name, vetoCard);
+        for (Character c: myList) {
+            str += String.format("%s\t",c.toString());
+        }
+        return str;
+    }
+
+    /**
+     * This private method count the number characters of each floor(exclude -1).
+     * This method is not allowed other class to use
+     * @return An integer array to count the number of characters of each floor(exclude -1 floor) .
+     */
+
+    private int[] countFloor(Character[] list){
+        int[] countFloor = new int[Gameboard.THRONE+1];
+        for (Character c : list) {
+            if (c.getPosition() != -1) {
+                countFloor[c.getPosition()]++;
+            }
+        }
+        return countFloor;
     }
 }

@@ -1,5 +1,6 @@
 /**
  * Model a Character in the game. It should keeps its name and its position.
+ * Name: Cheung King Hung ID: 21237379 Session: 000002
  */
 public class Character {
     public static final int OUT_OF_GAME = -1;
@@ -12,6 +13,8 @@ public class Character {
      */
     public Character(String name) {
         //TODO
+        this.name = name;
+        this.position = OUT_OF_GAME;
     }
 
     /**
@@ -21,6 +24,7 @@ public class Character {
      */
     public int getPosition() {
         //TODO
+        return position;
     }
 
     /**
@@ -34,6 +38,13 @@ public class Character {
      */
     public boolean setPosition(int pos) {
         //TODO
+        if (pos != OUT_OF_GAME && pos != position + 1  && position != OUT_OF_GAME){
+            System.out.println("Invalid Position!");
+            return false;
+        }else {
+            position = pos;
+            return true;
+        }
      }
 
     /**
@@ -45,6 +56,7 @@ public class Character {
      */
     public String toString() {
         //TODO
+        return String.format("%s[%d]", name, position);
     }
 
     /**
@@ -53,6 +65,7 @@ public class Character {
      */
     public String getName() {
         //TODO
+        return name;
     }
 
 }

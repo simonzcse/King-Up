@@ -3,6 +3,7 @@ import java.util.Scanner;
 /**
  * The class Gameboard is to print control the flow of the game and
  * contains a set of players and characters.
+ * Name: Cheung King Hung ID: 21237379 Session: 000002
  */
 public class Gameboard {
 
@@ -67,6 +68,17 @@ public class Gameboard {
      */
     public Gameboard() {
         //TODO
+        characters = new Character[NO_OF_CHARACTER];
+        for (int i = 0; i < NO_OF_CHARACTER; i++) {
+            characters[i] = new Character(CHARACTER_NAMES[i]);
+            characters[i].setPosition(Character.OUT_OF_GAME);
+
+        }
+        players = new Player[NO_OF_PLAYERS];
+        for (int i = 0; i < NO_OF_PLAYERS; i++) {
+            players[i] = new Player(PLAYER_NAMES[i],characters);
+            players[i].initVetoCard(3);
+        }
     }
 
     /**
@@ -119,8 +131,54 @@ public class Gameboard {
         //TODO
         //loop until 12 of the characters have been placed 
         //and place the last character at position 0
+        Scanner sc = new Scanner(System.in);
+        int[] countFloor = new int[THRONE +1];
+        for (int i = 0; i < NO_OF_CHARACTER-1; i++) {
+            int j = i % NO_OF_PLAYERS;
+            print();
+            System.out.println(players[j].toString() + ", this is your turn to place a character");
+            if (HUMAN_PLAYERS[j]){
+                Character selectedCharacter = null;
+                boolean isOK = false;
+                pickingCharacter:
+                do {
+                    System.out.println("Please pick a character");
+                    String chara = sc.next();
+                    for (Character c: characters) {
+                        if (c.getName().equals(chara)){
+                            selectedCharacter = c;
+                            if (selectedCharacter.getPosition()!=Character.OUT_OF_GAME){
+                                continue pickingCharacter;
+                            }else {
+                                isOK = true;
+                            }
+                        }
+                    }
+                }while (!isOK);
+                isOK = false;
+                do {
+                    System.out.println("Please enter the floor you want to place " + selectedCharacter.getName());
+                    int selectedFloor = sc.nextInt();
+                    if (selectedFloor >= 1 && selectedFloor <= 4 && countFloor[selectedFloor] < FULL){
+                        boolean isSet = selectedCharacter.setPosition(selectedFloor);
+                        if (isSet){
+                            countFloor[selectedFloor]++;
+                            isOK = true;;
+                        }
+                    }
+                }while (!isOK);
+            }else {//computer
+                Character randomCharacter = players[j].placeRandomly(characters);
+                countFloor[randomCharacter.getPosition()]++;
+            }
+        }
+        for (Character c: characters) {
+            if (c.getPosition() == Character.OUT_OF_GAME) {
+                c.setPosition(0);
+            }
+        }
+        System.out.println("End placing");
     }
-
 
     /**
      * Perform playing stage. Be careful that human player will need to pick the character to move.
@@ -130,9 +188,43 @@ public class Gameboard {
     private void playingStage() {
         //TODO
         //loop until a character has been voted for the new King.
+        Scanner sc = new Scanner(System.in);
+        int i = 0;
+        while (true){
+            int j = i % NO_OF_PLAYERS;
+            print();
+            System.out.println(players[j].toString() + "\nThis is your turn to move a character up");
+            Character selectedCharacter = null;
+            if (HUMAN_PLAYERS[j]){
+                do {
+                    System.out.println("Please type the character that you want to move.");
+                    selectedCharacter = players[j].pickCharToMove(characters, sc.next());
+                }while (selectedCharacter == null);
+            }else {
+                selectedCharacter = players[j].pickCharToMoveSmartly(characters);
+            }selectedCharacter.setPosition(selectedCharacter.getPosition()+1);
+
+            if (selectedCharacter.getPosition()==THRONE){//vote
+                print();
+                int voteCount = 0;
+                for (int k = 0; k < players.length; k++) {
+                    if (HUMAN_PLAYERS[k]){
+                        System.out.println("Please vote. Type V for veto. Other for accept");
+                        boolean b = sc.next().equalsIgnoreCase("V");
+                        voteCount += !players[k].vote(!b)?1:0;
+                    }else {
+                        voteCount += !players[k].voteSmartly(selectedCharacter)?1:0;
+                    }
+                }
+                if (voteCount == 0){
+                    break;
+                }else {
+                    selectedCharacter.setPosition(Character.OUT_OF_GAME);
+                }
+            }
+            i++;
+        }
     }
-
-
 
     /**
      * Print the gameboard. Please see the assignment webpage or the demo program for
@@ -140,6 +232,23 @@ public class Gameboard {
      */
     private void print() {
         //TODO
+        String str = "";
+        for (int i = Gameboard.THRONE; i >= 0; i--) {
+            str += String.format("Level %d:\t", i);
+            for (Character c:characters) {
+                if (c.getPosition() == i){
+                    str += c.getName()+"\t";
+                }
+            }
+            str +="\n";
+        }
+        str +="Unplaced/Killed Characters\n";
+        for (Character c:characters) {
+            if (c.getPosition()==Character.OUT_OF_GAME){
+                str += c.toString()+"\t";
+            }
+        }
+        str +="\n";
+        System.out.println(str);
     }
-
 }
